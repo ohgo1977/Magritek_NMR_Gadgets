@@ -3,13 +3,13 @@
 #  Description : Loading and Plotting 1D Data of Magritek NMR Spectrometer
 #  Developer   : Dr. Kosuke Ohgo
 #  ULR         : https://github.com/ohgo1977/Magritek_NMR_Gadgets
-#  Version     : 1.0.0
+#  Version     : 1.1.0
 # 
 #  ------------------------------------------------------------------------
 # 
 # MIT License
 #
-# Copyright (c) 2023 Kosuke Ohgo
+# Copyright (c) 2025 Kosuke Ohgo
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -29,7 +29,12 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 #
+# Version 1.1.0 on 9/22/2025
+# Revised on 9/22/2025
+# - loadImage() and plotImage() were added.
+#
 # Version 1.0.0 on 3/29/2024
+
 
 import struct
 import matplotlib.pyplot as plt
@@ -134,4 +139,83 @@ def plot1d(ax1d, data_r, **kwargs):
     ax.set_ylim(-0.05*max_value_y, 1.05*max_value_y)
     ax.invert_xaxis()
     plt.savefig('temp')
+    plt.show()
+
+
+def loadImage(fname):
+    # Load a binary file for an image (usually, 'iData.2d').
+    # Output is
+    # data: numpy ndarray with the dimensions of xDim and yDim.
+    # Example:
+    # data = magritek2py.loadImaga('iData.2d')
+
+    fid = open(fname,'rb')
+
+    # Header
+    # int32 => 32 bit => 4 bytes
+    owner_pros = struct.unpack('<i', fid.read(4))[0]
+    format_data = struct.unpack('<i', fid.read(4))[0]
+    version_v1_1 = struct.unpack('<i', fid.read(4))[0]
+    dataType_504 = struct.unpack('<i', fid.read(4))[0]
+    xDim = struct.unpack('<i', fid.read(4))[0]
+    yDim = struct.unpack('<i', fid.read(4))[0]
+    zDim = struct.unpack('<i', fid.read(4))[0]
+    qDim = struct.unpack('<i', fid.read(4))[0]
+
+    # Data size
+    xlen = xDim*yDim*zDim*qDim
+
+    # float32 => 32 bit => 4 bytes
+    data = [struct.unpack('f', fid.read(4))[0] for i in range(xlen)]# real part only
+    data = np.asarray(data).reshape((yDim,xDim))
+    return data
+
+def plotImage(data, FOV0, FOV1, **kwargs):
+    # Plot image data. 
+    # data: numpy ndarray obtained by loadImage()
+    # FOV0: Field of View of Read Gradient axis in mm.
+    # FOV1: Field of View of Phase Gradient axis in mm.
+    # There are otpional parameters.
+    # plane: plane of the image. The default is 'xy'
+    # major_tick: interval of major tick. The default is 1.
+    # minor_tick: interval of minor tick. The default is 0.1.
+    # Example:
+    # magritek2py.loadImage(data,8,8,plane='xz',major_tick = 2, minor_tick = 0.5)
+    
+    if 'plane' not in kwargs:
+        plane = 'xy'
+    else:
+        plane = kwargs['plane']
+
+    if 'major_tick' not in kwargs:
+        major_tick = 1
+    else:
+        major_tick = kwargs['major_tick']
+    
+    if 'minor_tick' not in kwargs:
+        minor_tick = 0.1
+    else:
+        minor_tick = kwargs['minor_tick']
+    fig = plt.figure(figsize = (9, 5))
+    ax = fig.add_subplot(1, 1, 1)
+    dims = data.shape
+    xDim = dims[1]# Need to be considered
+    yDim = dims[0]# Need to be considered
+    # https://neuraldatascience.io/8-mri/read_viz.html
+    # https://matplotlib.org/stable/users/explain/colors/colormaps.html
+    # https://stackoverflow.com/questions/20069545/2d-plot-of-a-matrix-with-colors-like-in-a-spectrogram
+    data_plot = np.flipud(data)# Keep consistency of images between Magritek and Python
+    plt.imshow(data_plot,cmap='turbo', extent=[0,FOV0,0,FOV1])
+    major_ticks_x = np.arange(0, FOV0+major_tick, major_tick)
+    minor_ticks_x = np.arange(0, FOV0+minor_tick, minor_tick)
+    ax.set_xticks(major_ticks_x)
+    ax.set_xticks(minor_ticks_x, minor=True)
+    ax.set_xlabel(plane[0]+' (mm) ('+str(round(FOV0/xDim*1000))+' um/pixel)')
+
+    major_ticks_y = np.arange(0, FOV1+major_tick, major_tick)
+    minor_ticks_y = np.arange(0, FOV1+minor_tick, minor_tick)
+    ax.set_yticks(major_ticks_y)
+    ax.set_yticks(minor_ticks_y, minor=True)
+    ax.set_ylabel(plane[1]+' (mm) ('+str(round(FOV1/yDim*1000))+' um/pixel)')
+
     plt.show()

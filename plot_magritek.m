@@ -1,3 +1,36 @@
+%  ------------------------------------------------------------------------
+%  File Name   : plot_magritek.m
+%  Description : MATLAB function to read and plot Magritek 1D data (data.1d, spectrum.1d, and spectrum_processed.1d)
+%  Developer   : Dr. Kosuke Ohgo
+%  ULR         : https://github.com/ohgo1977/Magritek_NMR_Gadgets
+%  Version     : 1.0.0
+%
+%  ------------------------------------------------------------------------
+%
+% MIT License
+%
+% Copyright (c) 2023 Kosuke Ohgo
+%
+% Permission is hereby granted, free of charge, to any person obtaining a copy
+% of this software and associated documentation files (the "Software"), to deal
+% in the Software without restriction, including without limitation the rights
+% to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+% copies of the Software, and to permit persons to whom the Software is
+% furnished to do so, subject to the following conditions:
+%
+% The above copyright notice and this permission notice shall be included in all
+% copies or substantial portions of the Software.
+%
+% THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+% IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+% FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+% AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+% LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+% OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+% SOFTWARE.
+%
+% Version 1.0.0 on 8/25/2023
+
 function vec = plot_magritek(filename,xlim_vec,plot_id,plot_switch)
         % Syntax:vec=plot_magritek(data_struct,xlim_vec,plot_id,plot_switch)
         % _unit)
@@ -16,35 +49,13 @@ function vec = plot_magritek(filename,xlim_vec,plot_id,plot_switch)
         plot_id = 1;
     end
 
-    % if nargin < 5
-    %     freq_unit = 'ppm';
-    % end
-
-    % if nargin < 6
-    %     info_switch='off';
-    % end
-
     [ppm,spc] = magritek1d2mat(filename);
     spc = real(spc);
-
-    % switch freq_unit
-    %     case 'ppm'
-            xaxis_vec = ppm;
-        % case 'Hz'
-        %     freq_vec=[-sw/2:sw/(length(ppm)-1):sw/2];
-        %     xaxis_vec=fliplr(freq_vec);
-        % case 'kHz'
-        %     freq_vec=[-sw/2:sw/(length(ppm)-1):sw/2];
-        %     xaxis_vec=fliplr(freq_vec)/10^3;
-    % end
+    xaxis_vec = ppm;
 
     switch plot_switch
         case 'on'
             for ii = 1:length(plot_id)
-    %             figure(plot_id(ii))%This line creats figures with figure numbers corresponding to plot_id.
-    %             However, that style causes an issue when
-    %             plot_data_struct is called in the other file to plot multiple
-    %             dataset.
                 figure;
                 plot(xaxis_vec,spc(:,plot_id(ii)));
                 xlim(xlim_vec);
@@ -55,15 +66,4 @@ function vec = plot_magritek(filename,xlim_vec,plot_id,plot_switch)
                 set(gca,'TickDir','out');% Tick outside
             end
     end
-
-    % switch info_switch
-    %     case 'on'
-    %         title(data_struct.foldername,'interpreter','non');
-    %         info_txt='';
-    %         info_txt=[info_txt sprintf('LB:%s Hz\n',num2str(data_struct.LB))];
-    %         info_txt=[info_txt sprintf('Zero Fill:%s pts\n',num2str(data_struct.ZeroFill))];
-    %         info_txt=[info_txt sprintf('Original Size:%s pts\n',num2str(size(data_struct.FID,2)))];
-    %         text(max(xlim),max(ylim),info_txt,'interpreter','non','VerticalAlignment','top')
-    % end
-
     vec = [xaxis_vec spc(:,plot_id)]';% Changing to a row vector.
